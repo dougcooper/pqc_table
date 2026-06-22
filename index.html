@@ -1410,8 +1410,8 @@
                 symbol: "Hk",
                 atomicNo: "Round 3",
                 name: "HAWK",
-                family: "multivariate",
                 family: "lattice",
+                severity: "secure",
                 row: 12,
                 col: 9,
                 function: "Lattice-Based Digital Signature",
@@ -1992,26 +1992,34 @@
         }
 
         function applyFilters() {
-            const query = document.getElementById("element-search").value.toLowerCase();
+            const query = (document.getElementById("element-search").value || "").toLowerCase();
 
             elementsData.forEach(el => {
                 const cell = document.getElementById(`el-${el.id}`);
                 if (!cell) return;
 
-                // 1. Search filter
-                const isQueryMatch = el.name.toLowerCase().includes(query) || 
-                                     el.symbol.toLowerCase().includes(query) || 
-                                     el.family.toLowerCase().includes(query) || 
-                                     el.function.toLowerCase().includes(query) || 
-                                     el.mathBase.toLowerCase().includes(query) ||
-                                     el.atomicNo.toLowerCase().includes(query);
+                // Defensive property access in case some items lack optional fields
+                const name = (el.name || "").toLowerCase();
+                const symbol = (el.symbol || "").toLowerCase();
+                const family = (el.family || "").toLowerCase();
+                const func = (el.function || "").toLowerCase();
+                const mathBase = (el.mathBase || "").toLowerCase();
+                const atomicNo = (el.atomicNo || "").toLowerCase();
 
-                // 2. Family filter (Fixed to catch hybrid combinations like XWing)
+                // 1. Search filter (safe checks)
+                const isQueryMatch = name.includes(query) || 
+                                     symbol.includes(query) || 
+                                     family.includes(query) || 
+                                     func.includes(query) || 
+                                     mathBase.includes(query) ||
+                                     atomicNo.includes(query);
+
+                // 2. Family filter (handle composite family memberships correctly)
                 const isFamilyMatch = (activeFamilyFilter === "all") || 
-                                      (el.family === activeFamilyFilter) || 
-                                      (activeFamilyFilter === "code" && (el.family === "code" || el.family === "multivariate")) ||
-                                      (activeFamilyFilter === "lattice" && el.family === "hybrid") ||
-                                      (activeFamilyFilter === "discrete-log" && el.family === "hybrid");
+                                      (family === activeFamilyFilter) || 
+                                      (activeFamilyFilter === "code" && (family === "code" || family === "multivariate")) ||
+                                      (activeFamilyFilter === "lattice" && (family === "lattice" || family === "hybrid")) ||
+                                      (activeFamilyFilter === "discrete-log" && (family === "discrete-log" || family === "hybrid"));
 
                 // 3. Severity filter (Dynamically checks effective quantum-era status)
                 let effectiveSeverity = el.severity;
